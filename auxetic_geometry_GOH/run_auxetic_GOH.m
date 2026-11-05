@@ -19,10 +19,10 @@ meshSearchTolerance=1e-3; %Tolerance for logic on mesh searching thresholds
 materialType='HGO';
 
 c_ini     = 1.2098951004; % Initial slope
-k1_ini    = 61.7903625549; % "Modulus of fibers"
+k1_ini    = 2*61.7903625549; % "Modulus of fibers"
 k2_ini    = 3.4106088361e-7; %  "non-linearity" or J-shape
 kappa_ini = 0.2985957214; % [0,1/3], "distance between graphs"
-k_ini     = 1.2098951004*1000; % Bulk modulus
+k_ini     = 1.2098951004*2000; % Bulk modulus
 gamma     = 41;
 LangerAngle_perp = 0/180*pi; % Angle of Langer line with loading direction
 LangerAngle_para = 90/180*pi; % Angle of Langer line with loading direction
@@ -372,7 +372,7 @@ for ang = angles_deg
             
             % GOH‑specific material parameters
             febio_spec.Material.material{1}.solid{1}.ATTR.type='HGO unconstrained';
-            febio_spec.Material.material{1}.solid{1}.c     = c_ini/2;
+            febio_spec.Material.material{1}.solid{1}.c     = 2*(c_ini/2);
             febio_spec.Material.material{1}.solid{1}.k1    = k1_ini;
             febio_spec.Material.material{1}.solid{1}.k2    = k2_ini;
             febio_spec.Material.material{1}.solid{1}.gamma = gamma;
@@ -381,13 +381,13 @@ for ang = angles_deg
 
             
             % GOH‑specific material parameters
-            febio_spec.Material.material{1}.solid{1}.ATTR.type='HGO unconstrained';
-            febio_spec.Material.material{1}.solid{1}.c     = c_ini/2;
-            febio_spec.Material.material{1}.solid{1}.k1    = k1_ini;
-            febio_spec.Material.material{1}.solid{1}.k2    = k2_ini;
-            febio_spec.Material.material{1}.solid{1}.gamma = -gamma;
-            febio_spec.Material.material{1}.solid{1}.kappa = kappa_ini;
-            febio_spec.Material.material{1}.solid{1}.k     = k_ini;
+            % febio_spec.Material.material{1}.solid{1}.ATTR.type='HGO unconstrained';
+            % febio_spec.Material.material{1}.solid{1}.c     = c_ini/2;
+            % febio_spec.Material.material{1}.solid{1}.k1    = k1_ini;
+            % febio_spec.Material.material{1}.solid{1}.k2    = k2_ini;
+            % febio_spec.Material.material{1}.solid{1}.gamma = -gamma;
+            % febio_spec.Material.material{1}.solid{1}.kappa = kappa_ini;
+            % febio_spec.Material.material{1}.solid{1}.k     = k_ini;
 
 
         case 'neo-Hookean'
@@ -585,7 +585,7 @@ for ang = angles_deg
             lambda_y_vec(i) = h / h0;
             J_vec(i)        = A / A0;%area ratio
 
-            % True Poisson’s ratio (log-based definition)
+            % True Poisson's ratio (log-based definition)
             if lambda_y_vec(i) > 0 && lambda_x_vec(i) > 0
                 nu_true(i) = -log(lambda_x_vec(i)) / log(lambda_y_vec(i));
             else
@@ -593,7 +593,7 @@ for ang = angles_deg
             end
         end
 
-        % Plot true Poisson’s ratio
+        % Plot true Poisson's ratio
         cFigure; hold on;
         plot(lambda_y_vec, nu_true, 'b-', 'LineWidth', 5);
         xlabel('\lambda_y (Axial Stretch)', 'Interpreter', 'tex', 'FontSize', 20,'FontWeight', 'bold');
@@ -791,9 +791,3 @@ end
 
 end
 
-
-%% plot
-% clear; close all; clc; gohFolder='C:\Sahar-GIBBON-codes\paper3-final\final results-GOH\function-2fibers\data'; ogdenFolder='C:\Sahar-GIBBON-codes\paper3-final\final results-GOH\ogden-final\data'; geomIDs=[1 3 4 5]; geomNames={'Alternative slits (AS)-1st order','I re-entrant slits (IS)','Alternative slits (AS)-2nd order','H re-entrant (HS)'}; geomShort={'AS-1','IS','AS-2','HS'}; angles=0:15:90; fontSize=16; numPlotPointsGraphs=100; colors=[0 0 0;0.8500 0.3250 0.0980;0 0.4470 0.7410;0.4660 0.6740 0.1880;0.4940 0.1840 0.5560;0.3010 0.7450 0.9330;0.6350 0.0780 0.1840;0.9290 0.6940 0.1250]; markers={'o','s','^','d','v','>','<','p'}; legendNames={'Ogden','GOH (\theta = 0°)','GOH (\theta = 15°)','GOH (\theta = 30°)','GOH (\theta = 45°)','GOH (\theta = 60°)','GOH (\theta = 75°)','GOH (\theta = 90°)'}; FendGOH=zeros(4,7); FendOgden=zeros(4,1); for g=1:4, figure; hold on; Hn=gobjects(8,1); D=dir(fullfile(ogdenFolder,sprintf('geometry_%d',geomIDs(g)),'*force_out.txt')); A=readmatrix(fullfile(D(1).folder,D(1).name),'FileType','text'); A=A(all(~isnan(A(:,1:4)),2),1:4); id=A(:,1); s=[1;find(diff(id)<=0)+1]; e=[s(2:end)-1;size(A,1)]; Fy=arrayfun(@(q)abs(sum(A(s(q):e(q),3))),1:numel(s)); lambdaRaw=linspace(1,1.25,numel(Fy)); lambdaPlot=linspace(1,1.25,numPlotPointsGraphs); FyPlot=interp1(lambdaRaw,Fy,lambdaPlot,'pchip','extrap'); FendOgden(g)=Fy(end); Hn(1)=plot(lambdaPlot,FyPlot,'Color',colors(1,:),'LineWidth',1.5,'Marker',markers{1},'MarkerIndices',1:10:length(lambdaPlot),'MarkerSize',6); for k=1:7, fileName=fullfile(gohFolder,sprintf('geometry_%d',geomIDs(g)),sprintf('geom%d_ang_%03d_force_out.txt',geomIDs(g),angles(k))); A=readmatrix(fileName,'FileType','text'); A=A(all(~isnan(A(:,1:4)),2),1:4); id=A(:,1); s=[1;find(diff(id)<=0)+1]; e=[s(2:end)-1;size(A,1)]; Fy=arrayfun(@(q)abs(sum(A(s(q):e(q),3))),1:numel(s)); lambdaRaw=linspace(1,1.25,numel(Fy)); lambdaPlot=linspace(1,1.25,numPlotPointsGraphs); FyPlot=interp1(lambdaRaw,Fy,lambdaPlot,'pchip','extrap'); FendGOH(g,k)=Fy(end); Hn(k+1)=plot(lambdaPlot,FyPlot,'Color',colors(k+1,:),'LineWidth',1.5,'Marker',markers{k+1},'MarkerIndices',1:10:length(lambdaPlot),'MarkerSize',6); end; title([geomNames{g} '|Force vs. Axial Stretch'],'FontSize',fontSize,'FontWeight','bold'); xlabel('\lambda_y (Axial Stretch)','FontSize',fontSize,'FontWeight','bold'); ylabel('|F_y|','FontSize',fontSize,'FontWeight','bold'); legend(Hn,legendNames,'Interpreter','tex','Location','northwest'); axis tight; axis square; box on; grid on; set(gca,'FontSize',fontSize,'FontWeight','bold','XMinorTick','on','YMinorTick','on'); drawnow; end
-% theta_full=0:15:360; geomColors=[0 0.4470 0.7410;0.8500 0.3250 0.0980;0.4660 0.6740 0.1880;0.4940 0.1840 0.5560]; figure; hold on; for g=1:4, f=FendGOH(g,:); f360=[f fliplr(f(2:end-1)) f fliplr(f(2:end-1)) f(1)]; plot(theta_full,f360,'LineWidth',3,'Color',geomColors(g,:),'Marker','o','MarkerIndices',1:2:numel(theta_full),'MarkerSize',6,'DisplayName',[geomNames{g} ' GOH']); plot(theta_full,FendOgden(g)*ones(size(theta_full)),'--','LineWidth',2,'Color',geomColors(g,:),'DisplayName',[geomNames{g} ' Ogden']); end; xlabel('Fiber Angle (deg)','FontSize',16,'FontWeight','bold'); ylabel('|F_y| at \lambda_y = 1.25','FontSize',16,'FontWeight','bold'); title('Force vs Orientation (0–360°)','FontSize',22,'FontWeight','bold'); xlim([0 360]); xticks(0:30:360); legend('Location','eastoutside'); axis square; box on; grid on; set(gca,'YMinorTick','on','XMinorTick','on','FontSize',16,'FontWeight','bold')
-% 
-% theta_full=0:15:360; theta_circle=linspace(0,360,361); for g=1:4, f=FendGOH(g,:); f360=[f fliplr(f(2:end-1)) f fliplr(f(2:end-1)) f(1)]; figure; pax=polaraxes; pax.Layer='top'; hold on; polarplot(deg2rad(theta_full),f360,'LineWidth',2,'Color',colors(2,:)); polarplot(deg2rad(theta_circle),FendOgden(g)*ones(size(theta_circle)),'LineWidth',2,'Color',colors(1,:)); pax.ThetaTick=0:30:330; pax.ThetaZeroLocation='right'; pax.ThetaDir='counterclockwise'; pax.FontSize=16; pax.FontWeight='bold'; title([geomNames{g} ' | Polar Force at \lambda_y = 1.25'],'FontSize',22,'FontWeight','bold'); legend('GOH','Ogden','Location','best'); rmin=min([f360(:); FendOgden(g)]); rmax=max([f360(:); FendOgden(g)]); offset=0.01*(rmax-rmin); rlim([rmin-offset rmax+offset]); grid on; end
