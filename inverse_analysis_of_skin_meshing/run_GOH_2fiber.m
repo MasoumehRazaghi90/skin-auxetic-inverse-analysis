@@ -1,5 +1,6 @@
-% function results = run_GOH_2fiber()
+% function results = run_GOH_1fiber()
 clear; close all; clc;
+
 %%
 % Plot settings
 fontSize=20;
@@ -8,7 +9,7 @@ faceAlpha2=1;
 edgeColor=0.25*ones(1,3);
 edgeWidth=1.5;
 markerSize1=15;
-markerSize2=8;
+markerSize2=40;
 markerSize3=50;
 lineWidth1=3;
 lineWidth2=3;
@@ -20,15 +21,9 @@ numPlotPointsGraphs = 100;
 % Path names
 defaultFolder = fileparts(fileparts(mfilename('fullpath')));
 savePath=fullfile(defaultFolder,'data','temp');
-savePath = fullfile(pwd,'tempFEBio');
-
-if ~exist(savePath,'dir')
-    mkdir(savePath);
-end
-
 
 % Defining file names
-febioFebFileNamePart='tempModel_2fiber';
+febioFebFileNamePart='tempModel_1fiber';
 febioFebFileName=fullfile(savePath,[febioFebFileNamePart,'.feb']); %FEB file name
 febioLogFileName=[febioFebFileNamePart,'.txt']; %FEBio log file name
 febioLogFileName_disp=[febioFebFileNamePart,'_disp_out.txt']; %Log file name for exporting displacement
@@ -55,21 +50,19 @@ numElementsHeight=round(sampleHeight/pointSpacings(3));
 
 %Initial material parameter set
 
-
-k_factor  = 1000;
-c_ini     = 1.3021255296772; % Initial slope
-k1_ini    = 124.3290999878474; % "Modulus of fibers"
-k2_ini    = 0.0001368087512; %  "non-linearity" or J-shape
-kappa_ini = 0.2985113701771; % [0,1/3], "distance between graphs"
+k_factor  = 2000;        % K = 2000c = 2419.8
+c_ini     = 1.2099;
+k1_ini    = 123.58;      % 2 × 61.790
+k2_ini    = 3.4157e-7;
+kappa_ini = 0.29859;
 k_ini     = c_ini*k_factor; % Bulk modulus
 gamma     = 41;
 
-
-
-evalMode = 2; % 1= test, 2=optimise
+evalMode = 1; % 1= test, 2=optimise
 
 P = [c_ini k1_ini k2_ini kappa_ini]; % Parameter vector
-
+% P = [c_ini*0.9 k1_ini*0.9 k2_ini*0.9 kappa_ini*0.9]; % Parameter vector
+% P = [c_ini*1.1 k1_ini*1.1 k2_ini*1.1 kappa_ini*1.1]; % Parameter vector
 
 LangerAngle_perp = 0/180*pi; % Angle of Langer line with loading direction
 LangerAngle_para = 90/180*pi; % Angle of Langer line with loading direction
@@ -167,7 +160,7 @@ elementMaterialIndices=ones(size(E,1),1);
 
 % Plotting boundary surfaces
 
-cFigure; hold on;
+figure; hold on;
 title('Model surfaces','FontSize',fontSize);
 gpatch(Fb,V,faceBoundaryMarker,'k',0.5);
 colormap(gjet(6)); icolorbar;
@@ -235,28 +228,22 @@ gamma_rad = gamma*pi/180; % Convert gamma to radians
 hf=cFigure;
 
 % Perp case
-
 subplot(1,2,1);  hold on;
 title('Material directions - perp','FontSize',fontSize);
 
-
 gpatch(Fb,V,'kw','none',0.25);
-% --- original directions ---
 hf(1)=quiverVec(VE,e1_dir_perp,mean(pointSpacings),'r');
 hf(2)=quiverVec(VE,e2_dir_perp,mean(pointSpacings)/2,'g');
 hf(3)=quiverVec(VE,e3_dir_perp,mean(pointSpacings)/2,'b');
 
-% --- fiber directions ---
+% --- fiber direction ---
 R_pos = euler2DCM([0, -LangerAngle_perp + gamma_rad, 0]);
-R_neg = euler2DCM([0, -LangerAngle_perp - gamma_rad, 0]);
 
 fiber1_dir_perp = repmat((R_pos*[1 0 0]')', size(E,1), 1);
-fiber2_dir_perp = repmat((R_neg*[1 0 0]')', size(E,1), 1);
 
 hf(4)=quiverVec(VE, fiber1_dir_perp, mean(pointSpacings), 'm'); % +gamma
-hf(5)=quiverVec(VE, fiber2_dir_perp, mean(pointSpacings), 'c'); % -gamma
 
-legend(hf,{'e1-direction','e2-direction','e3-direction','fiber +\gamma','fiber -\gamma'});
+legend(hf,{'e1-direction','e2-direction','e3-direction','fiber +\gamma'});
 axisGeom(gca,fontSize);
 camlight headlight;
 
@@ -270,15 +257,12 @@ hf(2)=quiverVec(VE,e2_dir_para,mean(pointSpacings)/2,'g');
 hf(3)=quiverVec(VE,e3_dir_para,mean(pointSpacings)/2,'b');
 
 R_pos_para = euler2DCM([0, -LangerAngle_para + gamma_rad, 0]);
-R_neg_para = euler2DCM([0, -LangerAngle_para - gamma_rad, 0]);
 
 fiber1_dir_para = repmat((R_pos_para*[1 0 0]')', size(E,1), 1);
-fiber2_dir_para = repmat((R_neg_para*[1 0 0]')', size(E,1), 1);
 
 hf(4)=quiverVec(VE, fiber1_dir_para, mean(pointSpacings), 'm'); % +gamma
-hf(5)=quiverVec(VE, fiber2_dir_para, mean(pointSpacings), 'c'); % -gamma
 
-legend(hf,{'e1-direction (fiber)','e2-direction','e3-direction','fiber +\gamma','fiber -\gamma'});
+legend(hf,{'e1-direction (fiber)','e2-direction','e3-direction','fiber +\gamma'});
 axisGeom(gca,fontSize);
 camlight headlight;
 drawnow;
@@ -307,32 +291,18 @@ febio_spec.Control.time_stepper.dtmax=dtmax;
 febio_spec.Control.time_stepper.max_retries=max_retries;
 febio_spec.Control.time_stepper.opt_iter=opt_iter;
 
-% Material section
-%dermis material
-
-febio_spec.Material.material{1}.ATTR.type = 'uncoupled solid mixture';
-materialName1 = 'Material1';
-febio_spec.Material.material{1}.ATTR.name = materialName1;
-febio_spec.Material.material{1}.ATTR.type = 'solid mixture';
-febio_spec.Material.material{1}.ATTR.id = 1;
-
-febio_spec.Material.material{1}.solid{1}.ATTR.type = 'HGO unconstrained';
-febio_spec.Material.material{1}.solid{1}.c     = c_ini/2;
-febio_spec.Material.material{1}.solid{1}.k1    = k1_ini;
-febio_spec.Material.material{1}.solid{1}.k2    = k2_ini;
-febio_spec.Material.material{1}.solid{1}.gamma = gamma;
-febio_spec.Material.material{1}.solid{1}.kappa = kappa_ini;
-febio_spec.Material.material{1}.solid{1}.k     = k_ini/2;
-
-febio_spec.Material.material{1}.solid{2}.ATTR.type = 'HGO unconstrained';
-febio_spec.Material.material{1}.solid{2}.c     = c_ini/2;
-febio_spec.Material.material{1}.solid{2}.k1    = k1_ini;
-febio_spec.Material.material{1}.solid{2}.k2    = k2_ini;
-febio_spec.Material.material{1}.solid{2}.gamma = -gamma;
-febio_spec.Material.material{1}.solid{2}.kappa = kappa_ini;
-febio_spec.Material.material{1}.solid{2}.k     = k_ini/2;
-
-
+%Material section
+materialName1='Material1';
+febio_spec.Material.material{1}.ATTR.name=materialName1;
+febio_spec.Material.material{1}.ATTR.type='HGO unconstrained';
+% febio_spec.Material.material{1}.ATTR.type='Holzapfel-Gasser-Ogden';
+febio_spec.Material.material{1}.ATTR.id=1;
+febio_spec.Material.material{1}.c=c_ini;
+febio_spec.Material.material{1}.k1=k1_ini;
+febio_spec.Material.material{1}.k2=k2_ini;
+febio_spec.Material.material{1}.gamma=gamma;
+febio_spec.Material.material{1}.kappa=kappa_ini;
+febio_spec.Material.material{1}.k=k_ini;
 
 % Mesh section
 % -> Nodes
@@ -472,8 +442,6 @@ objectiveStruct.Pb_struct.xxlim=[P(1)./1000 P(1).*1000;... % c
     0 P(3).*1000;... % k2
     0 1/3;... % kappa
     ]; %Parameter bounds
-
-
 objectiveStruct.k_factor=k_factor;
 
 objectiveStruct.LangerAngles = LangerAngles;
@@ -486,7 +454,7 @@ objectiveStruct.method = optimisationMethod;
 
 Pn=P./objectiveStruct.parNormFactors;
 
-P_opt = P;   % default value
+P_opt = P;   % default value (initial parameters)
 
 switch evalMode
     case 1
@@ -494,13 +462,15 @@ switch evalMode
 
         SSE = sum(errorVal.^2);
         n = numel(errorVal);
-        % stdError = sqrt(SSE/(n-1));
+        stdError = sqrt(SSE/(n-1));
+        disp(['SSE = ', num2str(SSE,8), ',  Std.dev = ', num2str(stdError,8)]);
 
         stretch_perp_sim = squeeze(mean(mean(simData(1).dataStruct_stretch.data,1),2));
         stress_perp_sim  = squeeze(mean(mean(simData(1).dataStruct_stress.data,1),2));
 
         stretch_para_sim = squeeze(mean(mean(simData(2).dataStruct_stretch.data,1),2));
         stress_para_sim  = squeeze(mean(mean(simData(2).dataStruct_stress.data,1),2));
+
     case 2
         %% start optimization
         switch optimisationMethod
@@ -712,27 +682,16 @@ drawnow;
         k1 = P(2);
         k2 = P(3);
         kappa = P(4);
-
         k = c*k_factor;
 
         % Set material parameters
         febio_spec.Material.material{1}.ATTR.id=1;
-        febio_spec.Material.material{1}.solid{1}.c     = c/2;
-        febio_spec.Material.material{1}.solid{1}.k1    = k1;
-        febio_spec.Material.material{1}.solid{1}.k2    = k2;
-        % febio_spec.Material.material{1}.solid{1}.gamma = gamma;
-        febio_spec.Material.material{1}.solid{1}.kappa = kappa;
-        febio_spec.Material.material{1}.solid{1}.k     = k;
-
-
-        febio_spec.Material.material{1}.solid{2}.c     = c/2;
-        febio_spec.Material.material{1}.solid{2}.k1    = k1;
-        febio_spec.Material.material{1}.solid{2}.k2    = k2;
-        % febio_spec.Material.material{1}.solid{2}.gamma = -gamma;
-        febio_spec.Material.material{1}.solid{2}.kappa = kappa;
-        febio_spec.Material.material{1}.solid{2}.k     = k;
-
-
+        febio_spec.Material.material{1}.c=c;
+        febio_spec.Material.material{1}.k1=k1;
+        febio_spec.Material.material{1}.k2=k2;
+        % febio_spec.Material.material{1}.gamma=gamma;
+        febio_spec.Material.material{1}.kappa=kappa;
+        febio_spec.Material.material{1}.k=k;
 
         nElem = size(febio_spec.Mesh.Elements{1}.elem.VAL,1);
 
@@ -797,6 +756,13 @@ drawnow;
             set(h(3),'XData',stretch_exp_perp_raw,'YData',stress_perp_sim_exp);
             set(h(4),'XData',stretch_exp_para_raw,'YData',stress_para_sim_exp);
 
+            % for q=1:1:numel(stress_perp_sim_exp)
+            %     plotV([stretch_exp_perp_raw(q) stress_perp_sim_exp(q); stretch_exp_perp_raw(q) stress_exp_perp_raw(q);],'y-','LineWidth',2);
+            % end
+            %
+            % for q=1:1:numel(stress_para_sim_exp)
+            %     plotV([stretch_exp_para_raw(q) stress_para_sim_exp(q); stretch_exp_para_raw(q) stress_exp_para_raw(q);],'c-','LineWidth',2);
+            % end
 
             drawnow; axis tight; drawnow;
 
@@ -823,7 +789,6 @@ drawnow;
 
 
     end
-
 % results.stretch_perp = stretch_perp_sim;
 % results.stress_perp  = stress_perp_sim;
 % 
@@ -842,3 +807,4 @@ drawnow;
 % results.P_opt = P_opt;
 % 
 % end
+
