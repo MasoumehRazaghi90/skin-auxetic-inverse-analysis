@@ -1,5 +1,5 @@
 function results = run_Ogden()
-
+% clear; close all; clc;
 %%
 % Plot settings
 fontSize=20;
@@ -49,18 +49,18 @@ numElementsHeight=round(sampleHeight/pointSpacings(3));
 
 %True material parameter set
 k_factor=100;
-c1_true=0.5;
-m1_true=6;
+c1_true=3.96;
+m1_true=14.354;
 k_true=c1_true*k_factor;
 
 %Initial material parameter set
 c1_ini=c1_true;
 m1_ini=m1_true;
-c2_ini = 0.05;    % initial guess for second term
-m2_ini = 12;   % initial guess (negative m)
+c2_ini = 0.192;    % initial guess for second term
+m2_ini = 14.482;   % initial guess (negative m)
 k_ini=c1_ini*k_factor;
 
-evalMode = 2; % 1= test, 2=optimise
+evalMode = 1; % 1= test, 2=optimise
 
 P = [c1_ini, m1_ini, c2_ini, m2_ini];
 
