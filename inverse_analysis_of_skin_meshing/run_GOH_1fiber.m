@@ -1,5 +1,5 @@
-% function results = run_GOH_1fiber()
-clear; close all; clc;
+function results = run_GOH_1fiber()
+% clear; close all; clc;
 
 %%
 % Plot settings
@@ -49,12 +49,18 @@ numElementsThickness=round(sampleThickness/pointSpacings(2));
 numElementsHeight=round(sampleHeight/pointSpacings(3));
 
 %Initial material parameter set
-
-k_factor  = 2000;        % K = 2000c = 2419.8
-c_ini     = 1.2099;
-k1_ini    = 123.58;      % 2 × 61.790
-k2_ini    = 3.4157e-7;
-kappa_ini = 0.29859;
+% k_factor  = 1000;
+% c_ini     = 1.3021255296772; % Initial slope
+% k1_ini    = 124.3290999878474; % "Modulus of fibers"
+% k2_ini    = 0.0001368087512; %  "non-linearity" or J-shape
+% kappa_ini = 0.2985113701771; % [0,1/3], "distance between graphs"
+% k_ini     = c_ini*k_factor; % Bulk modulus
+% gamma     = 41;
+k_factor  = 1000;        % K = 2000c = 2419.8
+c_ini     = 6.7750749315165470e-01;
+k1_ini    = 4.8980701087311495e+01;      % 2 × 61.790
+k2_ini    = 3.0503616429984859e-01;
+kappa_ini = 1.5144379802864585e-01; %0.1535 both only fits parallel directions
 k_ini     = c_ini*k_factor; % Bulk modulus
 gamma     = 41;
 
@@ -207,7 +213,7 @@ R = euler2DCM([0,-LangerAngle_perp,0]);
 e1 = (R*[1 0 0]')';
 e1_dir_perp = e1(ones(size(E,1),1),:);
 
-e2 = [0 1 0];
+e2 = (R*[0 0 1]')';
 e2_dir_perp = e2(ones(size(E,1),1),:);
 e3_dir_perp = cross(e1_dir_perp,e2_dir_perp,2);
 
@@ -215,7 +221,7 @@ R = euler2DCM([0,-LangerAngle_para,0]);
 e1 = (R*[1 0 0]')';
 e1_dir_para = e1(ones(size(E,1),1),:);
 
-e2 = [0 1 0];
+e2 = (R*[0 0 1]')';
 e2_dir_para = e2(ones(size(E,1),1),:);
 e3_dir_para = cross(e1_dir_para,e2_dir_para,2);
 
@@ -457,6 +463,12 @@ Pn=P./objectiveStruct.parNormFactors;
 P_opt = P;   % default value (initial parameters)
 
 switch evalMode
+    % case 1
+    %     [errorVal,simData] = objectiveFunctionIFEA(Pn, objectiveStruct);
+    % 
+    %     SSE = sum(errorVal.^2);
+    %     n = numel(errorVal);
+    %     % stdError = sqrt(SSE/(n-1));
     case 1
         [errorVal,simData] = objectiveFunctionIFEA(Pn, objectiveStruct);
 
@@ -702,7 +714,7 @@ drawnow;
             R = euler2DCM([0,-LangerAngles(i),0]); % Rotation matrix
             e1 = (R*[1 0 0]')'; % Rotated e1 vector
             e1_dir = e1(ones(nElem,1),:); % e1 copied for all elements
-            e2 = [0 1 0];% (R*[0 1 0]')'; % Rotated e1 vector
+            e2 = (R*[0 0 1]')';% (R*[0 1 0]')'; % Rotated e1 vector
             e2_dir = e2(ones(nElem,1),:); % e1 copied for all elements
 
             %Update the MeshData section with new material axis vectors
@@ -789,22 +801,22 @@ drawnow;
 
 
     end
-% results.stretch_perp = stretch_perp_sim;
-% results.stress_perp  = stress_perp_sim;
-% 
-% results.stretch_para = stretch_para_sim;
-% results.stress_para  = stress_para_sim;
-% 
-% results.stretch_exp_perp = stretch_exp_perp_raw;
-% results.stress_exp_perp  = stress_exp_perp_raw;
-% 
-% results.stretch_exp_para = stretch_exp_para_raw;
-% results.stress_exp_para  = stress_exp_para_raw;
-% 
-% results.SSE = SSE;
-% results.stdError = stdError;
-% 
-% results.P_opt = P_opt;
-% 
-% end
+results.stretch_perp = stretch_perp_sim;
+results.stress_perp  = stress_perp_sim;
+
+results.stretch_para = stretch_para_sim;
+results.stress_para  = stress_para_sim;
+
+results.stretch_exp_perp = stretch_exp_perp_raw;
+results.stress_exp_perp  = stress_exp_perp_raw;
+
+results.stretch_exp_para = stretch_exp_para_raw;
+results.stress_exp_para  = stress_exp_para_raw;
+
+results.SSE = SSE;
+results.stdError = stdError;
+
+results.P_opt = P_opt;
+
+end
 
