@@ -1,4 +1,4 @@
-
+%%GOH-Chapter5
 clear; close all; clc;
 
 %% Plot settings
@@ -18,11 +18,11 @@ meshSearchTolerance=1e-3; %Tolerance for logic on mesh searching thresholds
 %Material parameter set
 materialType='HGO';
 
-c_ini     = 1.2098951004; % Initial slope
-k1_ini    = 2*61.7903625549; % "Modulus of fibers"
-k2_ini    = 3.4106088361e-7; %  "non-linearity" or J-shape
-kappa_ini = 0.2985957214; % [0,1/3], "distance between graphs"
-k_ini     = 1.2098951004*2000; % Bulk modulus
+c_ini     = 6.77507493e-01; % Initial slope
+k1_ini    = 4.89807011e+01; % "Modulus of fibers"
+k2_ini    = 3.05036164e-01; %  "non-linearity" or J-shape
+kappa_ini = 1.51443798e-01; % [0,1/3], "distance between graphs"
+k_ini     = c_ini*1000; % Bulk modulus
 gamma     = 41;
 LangerAngle_perp = 0/180*pi; % Angle of Langer line with loading direction
 LangerAngle_para = 90/180*pi; % Angle of Langer line with loading direction
@@ -56,6 +56,16 @@ febioLogFileName_stress_prin=[febioFebFileNamePart,'_stress_prin_out.txt']; %Log
 febioLogFileName_force=[febioFebFileNamePart,'_force_out.txt']; %Log file name for exporting force
 
 %% geometries
+
+% pointSpacing =0.5;
+% distRefine = [6];
+
+% pointSpacing =0.5;
+% distRefine = [3];
+
+% pointSpacing =1;
+% distRefine = [3];
+
 
 % pointSpacing =2;
 % distRefine = [3];
@@ -107,11 +117,11 @@ febioLogFileName_force=[febioFebFileNamePart,'_force_out.txt']; %Log file name f
 
 pointSpacing =0.5;
 distRefine = [3 1];
-% 
+%
 
 geometryID = 5;   % choose your geometry (1–5)
 geo = allGeometries(geometryID, pointSpacing, distRefine);
-savePath = fullfile(defaultFolder,'data',sprintf('geometry_%d',geometryID));
+savePath = fullfile('C:\Sahar-GIBBON-codes\paper3-final\final results-GOH\chapter5_correct','data',sprintf('geometry_%d',geometryID));
 if ~exist(savePath,'dir'); mkdir(savePath); end
 
 F = geo.F;
@@ -285,16 +295,17 @@ end
 %%
 setenv('GIBBON_cFigure_close','0');
 
-angles_deg = 0;  % Loop from 0 to 90 degrees
+angles_deg = 0:15:90;  % Loop from 0 to 90 degrees
 
 for ang = angles_deg
     % Define fiber direction by rotating vector [1 0 0] around z-axis
-    R = euler2DCM([0,0,-ang*pi/180]);
-    e1 = (R*[1 0 0]')';  % Rotated fiber direction
+    R  = euler2DCM([0,0,-ang*pi/180]);   % rotate about thickness axis (z)
+    e1 = (R*[1 0 0]')';                  % Langer line direction (in x-y plane)
+    e2 = (R*[0 1 0]')';                  % in x-y plane, perpendicular to e1
 
     e1_dir = repmat(e1, nElem, 1);
-    e2_dir = repmat([0 0 1], nElem, 1);  % Keep this fixed
-    e3_dir = cross(e1_dir, e2_dir, 2);   % Orthogonal vector
+    e2_dir = repmat(e2, nElem, 1);
+    e3_dir = cross(e1_dir, e2_dir, 2);   % thickness direction (z)
 
     % Plot material directions
     VE = patchCentre(E, V);  % Make sure VE is defined
@@ -368,18 +379,18 @@ for ang = angles_deg
             febio_spec.Material.material{1}.ATTR.name=materialName1;
             febio_spec.Material.material{1}.ATTR.type = 'solid mixture';
             febio_spec.Material.material{1}.ATTR.id=1;
-            
-            
+
+
             % GOH‑specific material parameters
             febio_spec.Material.material{1}.solid{1}.ATTR.type='HGO unconstrained';
-            febio_spec.Material.material{1}.solid{1}.c     = 2*(c_ini/2);
+            febio_spec.Material.material{1}.solid{1}.c     = c_ini;
             febio_spec.Material.material{1}.solid{1}.k1    = k1_ini;
             febio_spec.Material.material{1}.solid{1}.k2    = k2_ini;
             febio_spec.Material.material{1}.solid{1}.gamma = gamma;
             febio_spec.Material.material{1}.solid{1}.kappa = kappa_ini;
             febio_spec.Material.material{1}.solid{1}.k     = k_ini;
 
-            
+
             % GOH‑specific material parameters
             % febio_spec.Material.material{1}.solid{1}.ATTR.type='HGO unconstrained';
             % febio_spec.Material.material{1}.solid{1}.c     = c_ini/2;
@@ -521,7 +532,7 @@ for ang = angles_deg
 
     febFileName = fullfile(savePath, sprintf('%s_ang_%03d.feb', febioFebFileNamePart, ang));
     febioStruct2xml(febio_spec, febFileName);
- %Exporting to file and domNode
+    %Exporting to file and domNode
     %system(['gedit ',febioFebFileName,' &']);
 
     %% Running the FEBio analysis
@@ -628,7 +639,7 @@ for ang = angles_deg
 
         %%
         % Compute element area (only once)
-        A = patchArea(E, V_DEF(:,:,1));
+        A = patchArea(E(:,1:3), V);   % in-plane area of each element (reference state)
         A_tot = sum(A);
 
         % Storage for p90 values for each time step
@@ -665,10 +676,10 @@ for ang = angles_deg
         for qt=1:1:size(N_disp_mat,3) %Loop over time increments
 
             % Compute 90% stress (area-weighted)
-            sigmaVM = E_stress_mat_VM(:,:,qt); %von Misses stress for each elements
-            Q = (sigmaVM(:) .* A) ./ A_tot; 
-            p90_vec(qt) = prctile(Q,90);
-
+            sigmaVM = E_stress_mat_VM(:,:,qt);
+            [vs,ind] = sort(sigmaVM(:));          % sort element stresses
+            cw = cumsum(A(ind))/A_tot;            % cumulative area fraction
+            p90_vec(qt) = vs(find(cw>=0.9,1));    % stress below which 90% of the area lies [MPa]
             [CV]=faceToVertexMeasure(E,V,E_stress_mat_VM(:,:,qt));
 
             %Set entries in animation structure
@@ -682,7 +693,7 @@ for ang = angles_deg
         figure; hold on;
         plot(lambda_y_vec, p90_vec, 'r-o', 'LineWidth', 3, 'MarkerFaceColor', 'r');
         xlabel('\lambda_y (Axial Stretch)', 'Interpreter', 'tex', 'FontSize', 18, 'FontWeight', 'bold');
-        ylabel('90% Stress (Normalized)', 'FontSize', 18, 'FontWeight', 'bold');
+        ylabel('p_{90} Stress (MPa)', 'FontSize', 18, 'FontWeight', 'bold');
         title(sprintf('p_{90} Stress vs Axial Stretch  |  Fiber Angle = %d°', ang), 'FontSize', 20, 'FontWeight', 'bold');
         grid on; axis square;
         set(gca, 'FontSize', 16, 'FontWeight', 'bold');
@@ -696,9 +707,9 @@ for ang = angles_deg
         % === Left: Max Stress Animation ===
         ax1 = nexttile;
         title(ax1, ...
-    sprintf('Max Stress $\\sigma_{vm}$ [MPa] | Fiber Angle = %d° | Elements = %d', ...
-    ang, size(E,1)), ...
-    'Interpreter','latex','FontSize',18);
+            sprintf('Max Stress $\\sigma_{vm}$ [MPa] | Fiber Angle = %d° | Elements = %d', ...
+            ang, size(E,1)), ...
+            'Interpreter','latex','FontSize',18);
         hp1 = gpatch(Fb, V_DEF(:,:,end), CV, 'none', 1, lineWidth1);
         axisGeom; colormap(cMap); colorbar;
         caxis([min(E_stress_mat_VM(:)) max(E_stress_mat_VM(:))]);
@@ -706,10 +717,10 @@ for ang = angles_deg
 
         % === Right: 90% Stress Animation ===
         ax2 = nexttile;
-      title(ax2, ...
-    sprintf('90%% Stress $\\sigma_{vm}$ [MPa] | Fiber Angle = %d° | Elements = %d', ...
-    ang, size(E,1)), ...
-    'Interpreter','latex','FontSize',18);
+        title(ax2, ...
+            sprintf('90%% Stress $\\sigma_{vm}$ [MPa] | Fiber Angle = %d° | Elements = %d', ...
+            ang, size(E,1)), ...
+            'Interpreter','latex','FontSize',18);
         hp2 = gpatch(Fb, V_DEF(:,:,end), CV, 'none', 1, lineWidth1);
         axisGeom; colormap(cMap); colorbar;
         caxis([min(E_stress_mat_VM(:)) max(p90_vec)]);
@@ -790,4 +801,3 @@ end
 [FT,VT]=mergeVertices(FT,VT);
 
 end
-
