@@ -1,4 +1,5 @@
 
+%%Ogden-Chapter5
 clear; close all; clc;
 
 %% Plot settings
@@ -67,6 +68,15 @@ febioLogFileName_force=[febioFebFileNamePart,'_force_out.txt']; %Log file name f
 
 %% geometries
 
+% pointSpacing =0.5;
+% distRefine = [6];
+
+% pointSpacing =0.5;
+% distRefine = [3];
+
+% pointSpacing =1;
+% distRefine = [3];
+
 % pointSpacing =2;
 % distRefine = [3];
 
@@ -103,8 +113,8 @@ febioLogFileName_force=[febioFebFileNamePart,'_force_out.txt']; %Log file name f
 % pointSpacing =0.25;
 % distRefine = [1.5 1 0.5];
 
-pointSpacing =0.5;
-distRefine = [2 1];
+% pointSpacing =0.5;
+% distRefine = [2 1];
 
 % pointSpacing =3;
 % distRefine = [5 4];
@@ -115,13 +125,13 @@ distRefine = [2 1];
 % pointSpacing =0.5;
 % distRefine = [4 3];
 
-% pointSpacing =0.5;
-% distRefine = [3 1];
+pointSpacing =0.5;
+distRefine = [3 1];
 
 
-geometryID = 5;   % choose your geometry (1–5)
+geometryID = 4;   % choose your geometry (1–5)
 geo = allGeometries(geometryID, pointSpacing, distRefine);
-savePath = fullfile(defaultFolder,'data',sprintf('geometry_%d',geometryID));
+savePath = fullfile('C:\Sahar-GIBBON-codes\paper3-final\final results-GOH\chapter5_correct\ogden\data',sprintf('geometry_%d',geometryID));
 if ~exist(savePath,'dir'); mkdir(savePath); end
 
 
@@ -136,7 +146,7 @@ t = geo.t;
 
 %FEBio Parameters
 h0 = max(V(:,2)) - min(V(:,2));  % Initial mesh height
-displacementMagnitude = 61.59/4;  % Slightly boost to avoid lambda_y = 1
+displacementMagnitude = 60/4;  % Slightly boost to avoid lambda_y = 1
 
 %% Creating triangle Mesh
 
@@ -314,17 +324,17 @@ for ang = angles_deg
     VE = patchCentre(E, V);  % Make sure VE is defined
 
     % Plot material directions (ONLY for anisotropic materials)
-if isAnisotropic
-    cFigure; hold on;
-    title(sprintf('Fiber direction = %d°', ang), 'FontSize', 20);
-    gpatch(Fb, V, 'kw', 'none', 0.25);
-    quiverVec(VE, e1_dir, mean(pointSpacing), 'r');
-    quiverVec(VE, e2_dir, mean(pointSpacing)/2, 'g');
-    quiverVec(VE, e3_dir, mean(pointSpacing)/2, 'b');
-    axisGeom(gca, fontSize);
-    camlight headlight;
-    drawnow;
-end
+    if isAnisotropic
+        cFigure; hold on;
+        title(sprintf('Fiber direction = %d°', ang), 'FontSize', 20);
+        gpatch(Fb, V, 'kw', 'none', 0.25);
+        quiverVec(VE, e1_dir, mean(pointSpacing), 'r');
+        quiverVec(VE, e2_dir, mean(pointSpacing)/2, 'g');
+        quiverVec(VE, e3_dir, mean(pointSpacing)/2, 'b');
+        axisGeom(gca, fontSize);
+        camlight headlight;
+        drawnow;
+    end
 
 
 
@@ -333,22 +343,22 @@ end
     % Visualizing material directions
 
     % Visualizing material directions (ONLY for anisotropic materials)
-if isAnisotropic
-    [VE]=patchCentre(E,V);
+    if isAnisotropic
+        [VE]=patchCentre(E,V);
 
-    hf=cFigure; hold on;
-    title(sprintf('Material directions  |  Fiber Angle = %d°', ang), 'FontSize', fontSize);
+        hf=cFigure; hold on;
+        title(sprintf('Material directions  |  Fiber Angle = %d°', ang), 'FontSize', fontSize);
 
-    gpatch(Fb,V,'kw','none',0.25);
-    hf(1)=quiverVec(VE,e1_dir,mean(pointSpacing),'r');
-    hf(2)=quiverVec(VE,e2_dir,mean(pointSpacing)/2,'g');
-    hf(3)=quiverVec(VE,e3_dir,mean(pointSpacing)/2,'b');
+        gpatch(Fb,V,'kw','none',0.25);
+        hf(1)=quiverVec(VE,e1_dir,mean(pointSpacing),'r');
+        hf(2)=quiverVec(VE,e2_dir,mean(pointSpacing)/2,'g');
+        hf(3)=quiverVec(VE,e3_dir,mean(pointSpacing)/2,'b');
 
-    legend(hf,{'e1-direction','e2-direction','e3-direction'});
-    axisGeom(gca,fontSize);
-    camlight headlight;
-    drawnow;
-end
+        legend(hf,{'e1-direction','e2-direction','e3-direction'});
+        axisGeom(gca,fontSize);
+        camlight headlight;
+        drawnow;
+    end
 
 
 
@@ -385,8 +395,8 @@ end
             febio_spec.Material.material{1}.ATTR.name=materialName1;
             febio_spec.Material.material{1}.ATTR.type = 'solid mixture';
             febio_spec.Material.material{1}.ATTR.id=1;
-            
-            
+
+
             % GOH‑specific material parameters
             febio_spec.Material.material{1}.solid{1}.ATTR.type='HGO unconstrained';
             febio_spec.Material.material{1}.solid{1}.c     = c_ini/2;
@@ -396,7 +406,7 @@ end
             febio_spec.Material.material{1}.solid{1}.kappa = kappa_ini;
             febio_spec.Material.material{1}.solid{1}.k     = k_ini;
 
-            
+
             % GOH‑specific material parameters
             febio_spec.Material.material{1}.solid{1}.ATTR.type='HGO unconstrained';
             febio_spec.Material.material{1}.solid{1}.c     = c_ini/2;
@@ -462,17 +472,17 @@ end
     %MeshData section
     % -> ElementData
     %MeshData section
-% -> ElementData (ONLY for anisotropic materials)
-if isAnisotropic
-    febio_spec.MeshData.ElementData{1}.ATTR.elem_set=partName1;
-    febio_spec.MeshData.ElementData{1}.ATTR.type='mat_axis';
+    % -> ElementData (ONLY for anisotropic materials)
+    if isAnisotropic
+        febio_spec.MeshData.ElementData{1}.ATTR.elem_set=partName1;
+        febio_spec.MeshData.ElementData{1}.ATTR.type='mat_axis';
 
-    for q = 1:size(E,1)
-        febio_spec.MeshData.ElementData{1}.elem{q}.ATTR.lid = q;
-        febio_spec.MeshData.ElementData{1}.elem{q}.a = e1_dir(q,:);
-        febio_spec.MeshData.ElementData{1}.elem{q}.d = e2_dir(q,:);
+        for q = 1:size(E,1)
+            febio_spec.MeshData.ElementData{1}.elem{q}.ATTR.lid = q;
+            febio_spec.MeshData.ElementData{1}.elem{q}.a = e1_dir(q,:);
+            febio_spec.MeshData.ElementData{1}.elem{q}.d = e2_dir(q,:);
+        end
     end
-end
 
     %Boundary condition section
     % -> Fix boundary conditions
@@ -554,7 +564,7 @@ end
 
     febFileName = fullfile(savePath, sprintf('%s_ang_%03d.feb', febioFebFileNamePart, ang));
     febioStruct2xml(febio_spec, febFileName);
- %Exporting to file and domNode
+    %Exporting to file and domNode
     %system(['gedit ',febioFebFileName,' &']);
 
     %% Running the FEBio analysis
@@ -565,7 +575,7 @@ end
     % succesfully.
 
     febioAnalysis.run_filename=febFileName; %The input file name
-    febioAnalysis.run_logname=febioLogFileName; %The name for the log file
+    febioAnalysis.run_logname=fullfile(savePath,febioLogFileName); %The name for the log file
     febioAnalysis.disp_on=0; %Display information on the command window
     febioAnalysis.runMode=runMode;
     febioAnalysis.maxLogCheckTime=10; %Max log file checking time
@@ -661,7 +671,7 @@ end
 
         %%
         % Compute element area (only once)
-        A = patchArea(E, V_DEF(:,:,1));
+        A = patchArea(E(:,1:3), V);   % in-plane area of each element (reference state)
         A_tot = sum(A);
 
         % Storage for p90 values for each time step
@@ -699,8 +709,9 @@ end
 
             % Compute 90% stress (area-weighted)
             sigmaVM = E_stress_mat_VM(:,:,qt);
-            Q = (sigmaVM(:) .* A) ./ A_tot;
-            p90_vec(qt) = prctile(Q,90);
+            [vs,ind] = sort(sigmaVM(:));          % sort element stresses
+            cw = cumsum(A(ind))/A_tot;            % cumulative area fraction
+            p90_vec(qt) = vs(find(cw>=0.9,1));    % stress below which 90% of the area lies [MPa];
 
             [CV]=faceToVertexMeasure(E,V,E_stress_mat_VM(:,:,qt));
 
@@ -715,7 +726,7 @@ end
         figure; hold on;
         plot(lambda_y_vec, p90_vec, 'r-o', 'LineWidth', 3, 'MarkerFaceColor', 'r');
         xlabel('\lambda_y (Axial Stretch)', 'Interpreter', 'tex', 'FontSize', 18, 'FontWeight', 'bold');
-        ylabel('90% Stress (Normalized)', 'FontSize', 18, 'FontWeight', 'bold');
+        ylabel('p_{90} Stress (MPa)', 'FontSize', 18, 'FontWeight', 'bold');
         title(sprintf('p_{90} Stress vs Axial Stretch  |  Fiber Angle = %d°', ang), 'FontSize', 20, 'FontWeight', 'bold');
         grid on; axis square;
         set(gca, 'FontSize', 16, 'FontWeight', 'bold');
@@ -729,9 +740,9 @@ end
         % === Left: Max Stress Animation ===
         ax1 = nexttile;
         title(ax1, ...
-    sprintf('Max Stress $\\sigma_{vm}$ [MPa] | Fiber Angle = %d° | Elements = %d', ...
-    ang, size(E,1)), ...
-    'Interpreter','latex','FontSize',18);
+            sprintf('Max Stress $\\sigma_{vm}$ [MPa] | Fiber Angle = %d° | Elements = %d', ...
+            ang, size(E,1)), ...
+            'Interpreter','latex','FontSize',18);
         hp1 = gpatch(Fb, V_DEF(:,:,end), CV, 'none', 1, lineWidth1);
         axisGeom; colormap(cMap); colorbar;
         caxis([min(E_stress_mat_VM(:)) max(E_stress_mat_VM(:))]);
@@ -739,10 +750,10 @@ end
 
         % === Right: 90% Stress Animation ===
         ax2 = nexttile;
-      title(ax2, ...
-    sprintf('90%% Stress $\\sigma_{vm}$ [MPa] | Fiber Angle = %d° | Elements = %d', ...
-    ang, size(E,1)), ...
-    'Interpreter','latex','FontSize',18);
+        title(ax2, ...
+            sprintf('90%% Stress $\\sigma_{vm}$ [MPa] | Fiber Angle = %d° | Elements = %d', ...
+            ang, size(E,1)), ...
+            'Interpreter','latex','FontSize',18);
         hp2 = gpatch(Fb, V_DEF(:,:,end), CV, 'none', 1, lineWidth1);
         axisGeom; colormap(cMap); colorbar;
         caxis([min(E_stress_mat_VM(:)) max(p90_vec)]);
